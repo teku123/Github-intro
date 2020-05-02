@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="91d6571e-d20a-4e3c-916b-b674865e50a1" >
+		<http:listener-connection host="localhost" port="8089" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="a81080f7-c9ef-41d8-994c-28e931f2705a" >
+		<http:request-connection host="www.thomas-bayer.com" port="80" connectionIdleTimeout="300000"/>
+	</http:request-config>
+	
+	<flow name="scatter_gatherFlow" doc:id="10856473-e66a-4403-9866-6c47cf6bb698" >
+		<http:listener doc:name="Listener" doc:id="c7679688-3889-43f7-8892-69b02c28596c" config-ref="HTTP_Listener_config" path="/Scath_Gath"/>
+		<logger level="INFO" doc:name="Logger" doc:id="e63a5f7f-1725-433d-85c2-81b3abfb9856" message="Starttime#[now()]"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="5543b803-4be5-422f-968c-c3456959838a" maxConcurrency="1">
+			<route >
+				<logger level="INFO" doc:name="Logger" doc:id="d97539f7-ca69-499d-837b-3dca7a717e4b" message="logger1"/>
+				<http:request method="GET" doc:name="Request" doc:id="9355a071-3631-46b5-bd58-b41ef61cef13" config-ref="HTTP_Request_configuration" path="/sqlrest/CUSTOMER/21"/>
+			</route>
+			<route >
+				<logger level="INFO" doc:name="Logger" doc:id="f6d0d339-8ee4-4c46-b8ba-51bfa4375932" message="logger2"/>
+				<http:request method="GET" doc:name="Request" doc:id="ea1b42c5-abf9-4473-a2e1-8347dc193dda" config-ref="HTTP_Request_configuration" path="/sqlrest/PRODUCT/12"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="9494a76a-46d7-4b31-8d6e-17ca7cf20375">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+flatten(payload..payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="de1a12ad-1fc8-462f-aaf0-06ae43a7e7fd" message="Endtime#[now()]"/>
+	</flow>
+	
+	<flow name="sequence_gatherFlow" doc:id="72195a5a-ab64-461e-ad84-0be88a74aa13" >
+		<http:listener doc:name="Listener" doc:id="2f76c8fb-28bc-402a-8073-6edf58ce7766" config-ref="HTTP_Listener_config" path="/seq_Gath"/>
+		<logger level="INFO" doc:name="Logger" doc:id="96333878-fb5f-4feb-ad4c-0ccae1e05cda" message="Starttime#[now()]"/>
+		<http:request method="GET" doc:name="Request" doc:id="2f77bcab-9f5d-4db1-abfa-330d09788943" config-ref="HTTP_Request_configuration" path="/sqlrest/PRODUCT/9" />
+		<http:request method="GET" doc:name="Request" doc:id="c51a0ffb-d947-4ebf-893c-9e2da6c4ca28" config-ref="HTTP_Request_configuration" path="/sqlrest/CUSTOMER/9" />
+		<logger level="INFO" doc:name="Logger" doc:id="ad6ed773-8e74-49b2-8482-0ed07ecbd41c" message="Endtime#[now()]" />
+	</flow>
+	
+	<flow name="scat_daynamic_gatherFlow" doc:id="b3743c54-911f-48a5-993d-34bed4ca9ca0" >
+		<http:listener doc:name="Listener" doc:id="2a5d1cc7-ef58-4ac4-9a98-03ef93a6c8fa" config-ref="HTTP_Listener_config" path="/Scatt"/>
+		<ee:transform doc:name="Transform Message" doc:id="b2f98592-6483-41cb-ab1d-33a523c1e487" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="Cust1" ><![CDATA[%dw 2.0
+output application/json
+---
+ attributes.queryParams.Cust1]]></ee:set-variable>
+				<ee:set-variable variableName="Prod1" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.Prod1]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="ba864593-4240-4f64-bfa8-964b66f1148a" maxConcurrency="1">
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="c2f7a1a9-eeee-4fdc-b8a9-a7d066271e16" config-ref="HTTP_Request_configuration" path="#['/sqlrest/CUSTOMER/' ++ vars.Cust1]"/>
+				<set-variable value="#[payload]" doc:name="Set Variable" doc:id="10c592fd-6528-4170-a1b9-448c91dc27f2" variableName="Cust"/>
+			
+</route>
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="8624f158-d676-4a7f-ba85-f58ab158f247" config-ref="HTTP_Request_configuration" path="#['/sqlrest/PRODUCT/' ++  vars.Prod1]"/>
+				<set-variable value="#[payload]" doc:name="Set Variable" doc:id="497507aa-42d1-478c-99ca-d84d84d817c9" variableName="Prod"/>
+			
+</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="7e86feba-22c3-4062-909c-e90b353967e3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+{CUSTOMER: 
+	{
+	CID: vars.Cust.CUSTOMER.ID,
+	FULLNAME: vars.Cust.CUSTOMER.FIRSTNAME as String ++ ' ' ++ vars.Cust.CUSTOMER.LASTNAME as String,
+	ADDRESS: vars.Cust.CUSTOMER.STREET as String ++ ' ' ++ vars.Cust.CUSTOMER.CITY as String,
+	PID: vars.Prod.PRODUCT.ID,
+	NAME: vars.Prod.PRODUCT.NAME,
+	PRICE: vars.Prod.PRODUCT.PRICE	
+	}
+	
+	}
+	
+	]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
