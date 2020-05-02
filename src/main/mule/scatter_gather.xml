@@ -34,7 +34,9 @@ flatten(payload..payload)]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="de1a12ad-1fc8-462f-aaf0-06ae43a7e7fd" message="Endtime#[now()]"/>
-	</flow>
+		<logger level="INFO" doc:name="Logger" doc:id="a6a0017a-fa25-4091-a7ce-c73dbf83493a" message="logger added"/>
+	
+</flow>
 	
 	<flow name="sequence_gatherFlow" doc:id="72195a5a-ab64-461e-ad84-0be88a74aa13" >
 		<http:listener doc:name="Listener" doc:id="2f76c8fb-28bc-402a-8073-6edf58ce7766" config-ref="HTTP_Listener_config" path="/seq_Gath"/>
